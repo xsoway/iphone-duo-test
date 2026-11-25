@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone Duo Test — Foldable Compatibility & Simulator Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-0: #1d2021;
+      --bg-1: #282828;
+      --bg-2: #32302f;
+      --bg-glass: rgba(40, 40, 40, 0.78);
+      --fg-0: #ebdbb2;
+      --fg-1: #d5c4a1;
+      --fg-muted: #a89984;
+      --border: rgba(235, 219, 178, 0.14);
+      --accent: #d79921;
+      --accent-soft: rgba(215, 153, 33, 0.14);
+      --green: #98971a;
+      --green-bright: #b8bb26;
+      --blue: #458588;
+      --purple: #b16286;
+      --red: #cc241d;
+      --shadow: 0 18px 42px rgba(0, 0, 0, 0.45);
+      --radius: 6px;
+      --font-sans: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: var(--bg-0);
+      color: var(--fg-0);
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(215, 153, 33, 0.08), transparent 42%),
+        radial-gradient(circle at 82% 75%, rgba(69, 133, 136, 0.08), transparent 44%),
+        linear-gradient(rgba(235, 219, 178, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(235, 219, 178, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+    }
+
+    .glow-orb {
+      position: fixed;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      top: -120px;
+      right: -100px;
+      filter: blur(28px);
+      animation: orbFloat 14s ease-in-out infinite alternate;
+    }
+    @keyframes orbFloat {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(-45px, 35px) scale(1.08); }
+    }
+    body.no-motion *, body.no-motion *::before, body.no-motion *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Sticky Navbar */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(29, 32, 33, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 60px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--fg-0);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .brand-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: var(--fg-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.15s;
+    }
+    nav a:hover { color: var(--accent); }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-pill {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-1);
+      color: var(--fg-0);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .btn-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 56px 0 40px;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid rgba(215, 153, 33, 0.3);
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p.lead {
+      color: var(--fg-1);
+      font-size: 1.05rem;
+      margin-bottom: 22px;
+      max-width: 540px;
+    }
+    .hero-cta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 26px;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #1d2021;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 0.92rem;
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      background: var(--bg-1);
+      color: var(--fg-0);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      font-size: 0.92rem;
+    }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .metric-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .metric-label {
+      font-size: 0.8rem;
+      color: var(--fg-muted);
+    }
+
+    /* Terminal Card */
+    .terminal {
+      background: #141617;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+    .term-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+    }
+    .term-dots { display: flex; gap: 6px; }
+    .term-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--bg-2);
+    }
+    .term-dots span:nth-child(1) { background: #cc241d; }
+    .term-dots span:nth-child(2) { background: #d79921; }
+    .term-dots span:nth-child(3) { background: #98971a; }
+    .term-title { color: var(--fg-muted); font-size: 0.76rem; }
+    .term-body {
+      padding: 16px;
+      min-height: 250px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--fg-1);
+    }
+    .t-prompt { color: var(--green-bright); }
+    .t-out { color: var(--accent); }
+    .t-ok { color: var(--green-bright); }
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: var(--accent);
+      vertical-align: middle;
+      margin-left: 3px;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Sections */
+    section {
+      padding: 46px 0;
+      border-top: 1px solid var(--border);
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 1.65rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .section-desc {
+      color: var(--fg-muted);
+      max-width: 680px;
+      margin-bottom: 24px;
+    }
+
+    /* Pipeline */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .pipe-step {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      position: relative;
+      transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    }
+    .pipe-step.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent), 0 10px 24px rgba(0, 0, 0, 0.35);
+      transform: translateY(-2px);
+    }
+    .pipe-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .pipe-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+    .pipe-sub { font-size: 0.82rem; color: var(--fg-muted); }
+
+    /* Comparison Table */
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: var(--bg-2);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    blockquote.quote {
+      margin-top: 18px;
+      padding: 14px 18px;
+      border-left: 3px solid var(--accent);
+      background: var(--bg-1);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--fg-1);
+      font-style: italic;
+    }
+
+    /* Feature Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+      color: var(--fg-0);
+    }
+    .card p { font-size: 0.88rem; color: var(--fg-muted); }
+
+    /* Try Commands */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 7px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-1);
+      color: var(--fg-1);
+      cursor: pointer;
+    }
+    .chip.active, .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    /* Tree */
+    .tree-box {
+      background: #141617;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+    }
+    .tree-folder {
+      cursor: pointer;
+      color: var(--accent);
+      user-select: none;
+      padding: 3px 0;
+    }
+    .tree-children {
+      padding-left: 20px;
+      border-left: 1px dashed var(--border);
+      margin-left: 6px;
+    }
+    .tree-children.collapsed { display: none; }
+    .tree-file { padding: 3px 0; color: var(--fg-1); }
+    .tag-doc { color: var(--blue); }
+    .tag-data { color: var(--green-bright); }
+    .tag-cfg { color: var(--purple); }
+
+    /* Live Clock & Cadence */
+    .cadence-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .clock-pill {
+      font-family: var(--font-mono);
+      font-size: 0.92rem;
+      padding: 8px 14px;
+      background: var(--bg-1);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      color: var(--accent);
+    }
+    .cadence-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .cadence-item {
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .cadence-item.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .cadence-time {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    /* Tweaks Floating Panel */
+    .tweaks-toggle {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 60;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 9px 14px;
+      border-radius: var(--radius);
+      background: var(--bg-1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .tweaks-panel {
+      position: fixed;
+      right: 18px;
+      bottom: 64px;
+      z-index: 60;
+      width: 240px;
+      background: var(--bg-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      display: none;
+    }
+    .tweaks-panel.open { display: block; }
+    .tweaks-row { margin-bottom: 12px; }
+    .tweaks-row:last-child { margin-bottom: 0; }
+    .tweaks-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+    .swatch-row { display: flex; gap: 8px; }
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 2px solid transparent;
+      cursor: pointer;
+    }
+    .swatch.active { border-color: var(--fg-0); }
+
+    footer {
+      padding: 36px 0 60px;
+      border-top: 1px solid var(--border);
+      color: var(--fg-muted);
+      font-size: 0.88rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    footer a { color: var(--fg-1); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; }
+      .pipeline { grid-template-columns: 1fr; }
+      .grid-3, .cadence-grid { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+    @media (max-width: 480px) {
+      .metrics { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb" aria-hidden="true"></div>
+
+  <header>
+    <div class="container nav-inner">
+      <a href="#top" class="brand">
+        <span class="brand-dot"></span>
+        <span>iphone-duo-test</span>
+      </a>
+      <nav>
+        <a href="#pipeline" data-en="Pipeline" data-zh="测试闭环">Pipeline</a>
+        <a href="#comparison" data-en="Baseline vs Duo" data-zh="差异对比">Baseline vs Duo</a>
+        <a href="#try" data-en="Commands" data-zh="试用命令">Commands</a>
+        <a href="#structure" data-en="Structure" data-zh="目录结构">Structure</a>
+        <a href="#cadence" data-en="Cadence" data-zh="执行节奏">Cadence</a>
+      </nav>
+      <div class="nav-actions">
+        <button id="langToggle" class="btn-pill" type="button">EN / 中文</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="container">
+    <section class="hero" style="border-top:none;">
+      <div>
+        <div class="hero-badge" data-en="iOS 27.2 · Xcode 27.2 · Foldable QA" data-zh="iOS 27.2 · Xcode 27.2 · 折叠屏测试">iOS 27.2 · Xcode 27.2 · Foldable QA</div>
+        <h1 data-en="Public <span>iPhone Duo</span> Compatibility Suite &amp; Simulator Playbook" data-zh="<span>iPhone Duo</span> 折叠屏兼容用例库与模拟器自动化指南">Public <span>iPhone Duo</span> Compatibility Suite &amp; Simulator Playbook</h1>
+        <p class="lead" data-en="144 structured test cases and an end-to-end Xcode 27.2 + serve-sim + Codex workflow to catch layout, focus, and state bugs when users fold mid-task." data-zh="144 条结构化公共测试用例与 Xcode 27.2 + serve-sim + Codex 自动化实践，帮你在用户操作中途折叠切屏时精准拦截布局、焦点与状态漂移缺陷。">144 structured test cases and an end-to-end Xcode 27.2 + serve-sim + Codex workflow to catch layout, focus, and state bugs when users fold mid-task.</p>
+        <div class="hero-cta">
+          <a class="btn-primary" href="https://github.com/xsoway/iphone-duo-test" target="_blank" rel="noopener" data-en="★ Star on GitHub" data-zh="★ 前往 GitHub 仓库">★ Star on GitHub</a>
+          <a class="btn-secondary" href="./README.md" data-en="Read Docs" data-zh="阅读文档">Read Docs</a>
+        </div>
+        <div class="metrics">
+          <div class="metric-card">
+            <div class="metric-val">144</div>
+            <div class="metric-label" data-en="Total Public Cases" data-zh="公共测试用例总数">Total Public Cases</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">54 + 90</div>
+            <div class="metric-label" data-en="PUB-* + Baseline" data-zh="PUB 专项 + 通用基线">PUB-* + Baseline</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val">5 Sheets</div>
+            <div class="metric-label" data-en="Excel QA Workbook" data-zh="Excel 执行工作簿">Excel QA Workbook</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal" aria-label="Simulator automation preview">
+        <div class="term-bar">
+          <div class="term-dots"><span></span><span></span><span></span></div>
+          <div class="term-title">zsh — iphone-duo-test</div>
+        </div>
+        <div class="term-body" id="heroTermBody"></div>
+      </div>
+    </section>
+
+    <section id="pipeline" class="reveal">
+      <div class="section-kicker" data-en="Core Workflow" data-zh="核心闭环">Core Workflow</div>
+      <h2 data-en="5-Stage Foldable Verification Loop" data-zh="五阶段折叠屏验证闭环">5-Stage Foldable Verification Loop</h2>
+      <p class="section-desc" data-en="Isolate universal business bugs from Duo-specific posture regressions before signing off." data-zh="先用普通直板机建立基线对照，再依次覆盖稳态姿态、操作中切换、分屏与证据归因。">Isolate universal business bugs from Duo-specific posture regressions before signing off.</p>
+      <div class="pipeline" id="pipelineGrid">
+        <div class="pipe-step active" data-step="0">
+          <div class="pipe-num">S1</div>
+          <div class="pipe-title" data-en="Slab Baseline" data-zh="直板对照">Slab Baseline</div>
+          <div class="pipe-sub" data-en="Run primary flow on standard iPhone with fixed data." data-zh="普通 iPhone 同构建同数据跑通主流程。">Run primary flow on standard iPhone with fixed data.</div>
+        </div>
+        <div class="pipe-step" data-step="1">
+          <div class="pipe-num">S2</div>
+          <div class="pipe-title" data-en="Steady Postures" data-zh="稳态姿态">Steady Postures</div>
+          <div class="pipe-sub" data-en="Verify Cover (A), Inner (B), and Half-Fold (C)." data-zh="逐个进入外屏 A、内屏 B 与半开 C。">Verify Cover (A), Inner (B), and Half-Fold (C).</div>
+        </div>
+        <div class="pipe-step" data-step="2">
+          <div class="pipe-num">S3</div>
+          <div class="pipe-title" data-en="Mid-Action Fold" data-zh="操作中切换">Mid-Action Fold</div>
+          <div class="pipe-sub" data-en="Fold with keyboard open, modal active, or upload running." data-zh="键盘开启、弹层或上传进行中执行合展。">Fold with keyboard open, modal active, or upload running.</div>
+        </div>
+        <div class="pipe-step" data-step="3">
+          <div class="pipe-num">S4</div>
+          <div class="pipe-title" data-en="Split View &amp; H5" data-zh="分屏与 H5">Split View &amp; H5</div>
+          <div class="pipe-sub" data-en="Check System Split (D), Safari &amp; WKWebView viewports." data-zh="校验系统分屏 D 及 Safari / WKWebView 视口。">Check System Split (D), Safari &amp; WKWebView viewports.</div>
+        </div>
+        <div class="pipe-step" data-step="4">
+          <div class="pipe-num">S5</div>
+          <div class="pipe-title" data-en="Evidence Triage" data-zh="取证归因">Evidence Triage</div>
+          <div class="pipe-sub" data-en="Pair display screenshots, SpringBoard logs &amp; SHA-256." data-zh="关联活动面截图、系统日志与文件哈希。">Pair display screenshots, SpringBoard logs &amp; SHA-256.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="comparison" class="reveal">
+      <div class="section-kicker" data-en="Why Duo Differs" data-zh="差异分析">Why Duo Differs</div>
+      <h2 data-en="Standard iPhone Baseline vs. iPhone Duo Variables" data-zh="普通 iPhone 基线 vs iPhone Duo 新增变量">Standard iPhone Baseline vs. iPhone Duo Variables</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-en="Dimension" data-zh="设备差异">Dimension</th>
+              <th data-en="Standard iPhone" data-zh="普通 iPhone 基线">Standard iPhone</th>
+              <th data-en="iPhone Duo Variables" data-zh="iPhone Duo 变量">iPhone Duo Variables</th>
+              <th data-en="Key Verification" data-zh="核心验收点">Key Verification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-en="Physical Display" data-zh="物理显示面">Physical Display</td>
+              <td data-en="Single main screen" data-zh="同一块主屏">Single main screen</td>
+              <td data-en="Cover (A) ↔ Inner (B)" data-zh="合盖外屏 (A) ↔ 展开内屏 (B)">Cover (A) ↔ Inner (B)</td>
+              <td data-en="Object ID, route stack, unsaved input" data-zh="对象 ID、路由栈、未提交输入">Object ID, route stack, unsaved input</td>
+            </tr>
+            <tr>
+              <td data-en="In-App Layout" data-zh="内屏布局">In-App Layout</td>
+              <td data-en="Single-window width" data-zh="当前窗口宽度适配">Single-window width</td>
+              <td data-en="Single-stack or list-detail dual-pane" data-zh="单栈切换为列表+详情双栏">Single-stack or list-detail dual-pane</td>
+              <td data-en="Default selection, CTA target sync" data-zh="默认选中项与右侧 CTA 目标一致">Default selection, CTA target sync</td>
+            </tr>
+            <tr>
+              <td data-en="Half-Fold Hinge" data-zh="半开折叠区">Half-Fold Hinge</td>
+              <td data-en="No hinge zone" data-zh="无铰链保留区">No hinge zone</td>
+              <td data-en="Segmented viewport &amp; hinge gap (C)" data-zh="分段视口与折叠保留区 (C)">Segmented viewport &amp; hinge gap (C)</td>
+              <td data-en="Controls &amp; text avoid reserved area" data-zh="关键控件与文字避开保留区">Controls &amp; text avoid reserved area</td>
+            </tr>
+            <tr>
+              <td data-en="System Multitasking" data-zh="系统多任务">System Multitasking</td>
+              <td data-en="Single-app window" data-zh="单 App 窗口">Single-app window</td>
+              <td data-en="System Split View (D) side-by-side" data-zh="系统 Split View (D) 并排">System Split View (D) side-by-side</td>
+              <td data-en="Left/right swap &amp; keyboard focus" data-zh="左右换边、焦点归属与窄窗回退">Left/right swap &amp; keyboard focus</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <blockquote class="quote" data-en="“Can you still see the page? Can you still tap the key control? And is the object you are acting on still the exact same one?”" data-zh="“页面还能看见吗？关键控件还能操作吗？操作的对象、输入和结果还是刚才那一份吗？”">“Can you still see the page? Can you still tap the key control? And is the object you are acting on still the exact same one?”</blockquote>
+    </section>
+
+    <section id="features" class="reveal">
+      <div class="section-kicker" data-en="Capabilities" data-zh="核心能力">Capabilities</div>
+      <h2 data-en="Built from Real Simulator &amp; QA Evidence" data-zh="源于真实模拟器链路与 QA 实践">Built from Real Simulator &amp; QA Evidence</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3 data-en="144 Cases + 5-Sheet Workbook" data-zh="144 条用例 + 5 表工作簿">144 Cases + 5-Sheet Workbook</h3>
+          <p data-en="Covers M1–M7 baseline plus 54 PUB-* cases across single screen, dual-pane, gestures, H5/WKWebView, file transfer, and release gates." data-zh="覆盖 M1–M7 通用基线与 54 条 PUB-* 专项用例，涵盖单双屏、手势、H5/WKWebView、上传下载与发布验收。">Covers M1–M7 baseline plus 54 PUB-* cases across single screen, dual-pane, gestures, H5/WKWebView, file transfer, and release gates.</p>
+        </div>
+        <div class="card">
+          <h3 data-en="serve-sim Posture Injection" data-zh="serve-sim 姿态驱动">serve-sim Posture Injection</h3>
+          <p data-en="Automate fold 0 / 130 / 180 and orientation rotations over localhost while streaming live simulator frames to Codex or your browser." data-zh="通过本地镜像服务自动注入 0° / 130° / 180° 折叠角度与横竖屏旋转，并将模拟器画面串流至浏览器或 Codex。">Automate fold 0 / 130 / 180 and orientation rotations over localhost while streaming live simulator frames to Codex or your browser.</p>
+        </div>
+        <div class="card">
+          <h3 data-en="Display &amp; Log Attribution" data-zh="显示面与日志归因">Display &amp; Log Attribution</h3>
+          <p data-en="Distinguish mirror stream black frames from actual app crashes using simctl --display screenshots and SpringBoard logs." data-zh="结合 simctl 指定显示面截图与 SpringBoard 进程日志，准确区分镜像黑帧与真实应用闪退。">Distinguish mirror stream black frames from actual app crashes using simctl --display screenshots and SpringBoard logs.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="try" class="reveal">
+      <div class="section-kicker" data-en="Interactive CLI" data-zh="命令试用">Interactive CLI</div>
+      <h2 data-en="Try Simulator &amp; Evidence Commands" data-zh="试用模拟器与取证命令">Try Simulator &amp; Evidence Commands</h2>
+      <div class="chips" id="cmdChips">
+        <button class="chip active" type="button" data-cmd="vtool">xcrun vtool</button>
+        <button class="chip" type="button" data-cmd="launch">simctl launch</button>
+        <button class="chip" type="button" data-cmd="fold">serve-sim fold 130</button>
+        <button class="chip" type="button" data-cmd="shot">simctl screenshot</button>
+        <button class="chip" type="button" data-cmd="sha">shasum -a 256</button>
+      </div>
+      <div class="terminal">
+        <div class="term-bar">
+          <div class="term-dots"><span></span><span></span><span></span></div>
+          <div class="term-title" data-en="interactive preview" data-zh="命令输出预览">interactive preview</div>
+        </div>
+        <div class="term-body" id="tryTermBody" style="min-height:130px;"></div>
+      </div>
+    </section>
+
+    <section id="structure" class="reveal">
+      <div class="section-kicker" data-en="Repository Layout" data-zh="仓库结构">Repository Layout</div>
+      <h2 data-en="Expandable Directory Tree" data-zh="可展开目录树">Expandable Directory Tree</h2>
+      <div class="tree-box" id="repoTree"></div>
+    </section>
+
+    <section id="cadence" class="reveal">
+      <div class="cadence-header">
+        <div>
+          <div class="section-kicker" data-en="QA Cadence" data-zh="执行节奏">QA Cadence</div>
+          <h2 data-en="Local Time &amp; Recommended Run Window" data-zh="本地时钟与推荐执行阶段">Local Time &amp; Recommended Run Window</h2>
+        </div>
+        <div class="clock-pill" id="liveClock">--:--:--</div>
+      </div>
+      <div class="cadence-grid" id="cadenceGrid">
+        <div class="cadence-item" data-window="morning">
+          <div class="cadence-time">09:00 – 12:30</div>
+          <strong data-en="P0 Baseline &amp; Steady Postures" data-zh="P0 基线与稳态姿态">P0 Baseline &amp; Steady Postures</strong>
+          <p style="font-size:0.84rem;color:var(--fg-muted);margin-top:4px;" data-en="Verify .app IOSSIMULATOR build, slab baseline, and A/B/C steady layout." data-zh="校验 .app 平台、直板基线及 A/B/C 稳态布局。">Verify .app IOSSIMULATOR build, slab baseline, and A/B/C steady layout.</p>
+        </div>
+        <div class="cadence-item" data-window="afternoon">
+          <div class="cadence-time">13:30 – 18:00</div>
+          <strong data-en="Mid-Action Fold &amp; Split View" data-zh="操作中切换与系统分屏">Mid-Action Fold &amp; Split View</strong>
+          <p style="font-size:0.84rem;color:var(--fg-muted);margin-top:4px;" data-en="Run serve-sim fold 0/130/180 during keyboard, H5, and upload flows." data-zh="在键盘、H5 与上传流程中驱动 fold 0/130/180 切换。">Run serve-sim fold 0/130/180 during keyboard, H5, and upload flows.</p>
+        </div>
+        <div class="cadence-item" data-window="evening">
+          <div class="cadence-time">18:00 – 09:00 / Weekend</div>
+          <strong data-en="Evidence Bundling &amp; Regression" data-zh="取证归档与回归汇总">Evidence Bundling &amp; Regression</strong>
+          <p style="font-size:0.84rem;color:var(--fg-muted);margin-top:4px;" data-en="Archive simctl screenshots, SpringBoard logs, SHA-256, and Excel status." data-zh="汇总系统截图、SpringBoard 日志、SHA-256 与 Excel 用例状态。">Archive simctl screenshots, SpringBoard logs, SHA-256, and Excel status.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>
+        <span data-en="MIT License · Copyright (c) 2026 Alan Hsu" data-zh="MIT 开源协议 · Copyright (c) 2026 Alan Hsu">MIT License · Copyright (c) 2026 Alan Hsu</span>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <a href="./README.md">README (EN)</a>
+        <a href="./README.zh-CN.md">README (中文)</a>
+        <a href="https://github.com/xsoway/iphone-duo-test" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/xsoway/iphone-duo-test/discussions" target="_blank" rel="noopener">Discussions</a>
+      </div>
+    </footer>
+  </main>
+
+  <button class="tweaks-toggle" id="tweaksToggle" type="button" data-en="⚙ Tweaks" data-zh="⚙ 外观调节">⚙ Tweaks</button>
+  <div class="tweaks-panel" id="tweaksPanel">
+    <div class="tweaks-row">
+      <span class="tweaks-label" data-en="Accent Color" data-zh="强调色">Accent Color</span>
+      <div class="swatch-row" id="swatches">
+        <button class="swatch active" type="button" data-color="#d79921" style="background:#d79921" aria-label="Gold"></button>
+        <button class="swatch" type="button" data-color="#98971a" style="background:#98971a" aria-label="Green"></button>
+        <button class="swatch" type="button" data-color="#b16286" style="background:#b16286" aria-label="Purple"></button>
+        <button class="swatch" type="button" data-color="#458588" style="background:#458588" aria-label="Blue"></button>
+      </div>
+    </div>
+    <div class="tweaks-row">
+      <span class="tweaks-label" data-en="Motion" data-zh="动效开关">Motion</span>
+      <button class="btn-pill" id="motionToggle" type="button" data-en="Motion: ON" data-zh="动效：开启">Motion: ON</button>
+    </div>
+  </div>
+
+  <script>
+    let currentLang = "en";
+    let motionEnabled = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let heroTimer = null;
+
+    const heroScripts = {
+      en: [
+        { type: "cmd", text: "$ git clone https://github.com/xsoway/iphone-duo-test.git" },
+        { type: "out", text: "Cloning into 'iphone-duo-test'..." },
+        { type: "cmd", text: "$ xcrun vtool -show-build \"$APP/$EXE\"" },
+        { type: "ok",  text: "✓ platform IOSSIMULATOR · minos 27.2" },
+        { type: "cmd", text: "$ npx --yes serve-sim@0.1.49 fold 130 -d \"$SIM\"" },
+        { type: "ok",  text: "✓ Posture updated: half-fold (130°) · active display verified" }
+      ],
+      zh: [
+        { type: "cmd", text: "$ git clone https://github.com/xsoway/iphone-duo-test.git" },
+        { type: "out", text: "正在克隆到 'iphone-duo-test'..." },
+        { type: "cmd", text: "$ xcrun vtool -show-build \"$APP/$EXE\"" },
+        { type: "ok",  text: "✓ 校验通过：platform IOSSIMULATOR · minos 27.2" },
+        { type: "cmd", text: "$ npx --yes serve-sim@0.1.49 fold 130 -d \"$SIM\"" },
+        { type: "ok",  text: "✓ 姿态已切换：半开（130°）· 活动显示面已确认" }
+      ]
+    };
+
+    function playHeroTerminal() {
+      if (heroTimer) clearTimeout(heroTimer);
+      const body = document.getElementById("heroTermBody");
+      body.innerHTML = "";
+      const lines = heroScripts[currentLang];
+      let idx = 0;
+
+      function nextLine() {
+        if (idx >= lines.length) {
+          const cur = document.createElement("span");
+          cur.className = "cursor";
+          body.appendChild(cur);
+          return;
+        }
+        const item = lines[idx++];
+        const div = document.createElement("div");
+        div.className = item.type === "cmd" ? "t-prompt" : (item.type === "ok" ? "t-ok" : "t-out");
+        div.textContent = item.text;
+        body.appendChild(div);
+        heroTimer = setTimeout(nextLine, motionEnabled ? 340 : 0);
+      }
+      nextLine();
+    }
+
+    const cmdOutputs = {
+      vtool: {
+        cmd: "xcrun vtool -show-build \"$APP/$EXE\"",
+        en: "✓ platform IOSSIMULATOR (arm64) · minos 27.2 · sdk 27.2",
+        zh: "✓ 目标平台为 IOSSIMULATOR (arm64) · 最低系统 27.2 · SDK 27.2"
+      },
+      launch: {
+        cmd: "xcrun simctl bootstatus \"$SIM\" -b && xcrun simctl install \"$SIM\" \"$APP\" && xcrun simctl launch \"$SIM\" \"$BUNDLE\"",
+        en: "✓ Simulator booted · App installed · PID returned for $BUNDLE",
+        zh: "✓ 模拟器已就绪 · 应用安装成功 · 已返回 $BUNDLE 进程 PID"
+      },
+      fold: {
+        cmd: "npx --yes serve-sim@0.1.49 fold 130 -d \"$SIM\"",
+        en: "✓ Hinge angle set to 130° (half-fold) · Verify reserved zone in Device Hub",
+        zh: "✓ 铰链角度已设为 130°（半开）· 请在 Device Hub 核对折叠保留区"
+      },
+      shot: {
+        cmd: "xcrun simctl io \"$SIM\" screenshot --display=3 evidence/inner.png",
+        en: "✓ Saved inner display screenshot to evidence/inner.png",
+        zh: "✓ 已保存内屏活动显示面截图至 evidence/inner.png"
+      },
+      sha: {
+        cmd: "shasum -a 256 evidence/source.pdf evidence/downloaded.pdf",
+        en: "✓ SHA-256 hashes match across fold transition",
+        zh: "✓ 切屏下载前后文件 SHA-256 校验完全一致"
+      }
+    };
+
+    let activeCmd = "vtool";
+    function renderTryCmd(key) {
+      activeCmd = key;
+      const item = cmdOutputs[key];
+      const body = document.getElementById("tryTermBody");
+      body.innerHTML =
+        `<div class="t-prompt">$ ${item.cmd}</div>` +
+        `<div class="t-ok" style="margin-top:8px;">${item[currentLang]}</div>`;
+    }
+
+    const treeData = [
+      {
+        name: "docs/",
+        type: "folder",
+        open: true,
+        children: [
+          { name: "iphone-duo-public-test-cases.md", cls: "tag-doc", descEn: "144 public cases (90 baseline + 54 PUB-*)", descZh: "144 条公共测试用例（90 基线 + 54 PUB-*）" },
+          { name: "xcodex-simulator-automation-guide.md", cls: "tag-doc", descEn: "Xcode 27.2 + Codex + serve-sim guide", descZh: "Xcode 27.2 + Codex + serve-sim 指南" }
+        ]
+      },
+      {
+        name: "data/",
+        type: "folder",
+        open: true,
+        children: [
+          { name: "iphone-duo-public-test-cases.xlsx", cls: "tag-data", descEn: "5-sheet QA tracking workbook", descZh: "含 5 个工作表的 Excel 执行工作簿" }
+        ]
+      },
+      { name: "README.md", cls: "tag-doc", descEn: "English documentation", descZh: "英文版说明文档" },
+      { name: "README.zh-CN.md", cls: "tag-doc", descEn: "Simplified Chinese documentation", descZh: "简体中文说明文档" },
+      { name: "index.html", cls: "tag-cfg", descEn: "Single-file project homepage", descZh: "单文件交互式项目主页" },
+      { name: "RELEASE_CHECKLIST.md", cls: "tag-doc", descEn: "Evidence-backed release checklist", descZh: "开源发布逐项检查记录" },
+      { name: "LICENSE", cls: "tag-cfg", descEn: "MIT License (Alan Hsu)", descZh: "MIT 开源协议（Alan Hsu）" },
+      { name: ".gitignore", cls: "tag-cfg", descEn: "Excludes .DS_Store, logs, evidence/", descZh: "忽略系统文件、日志与取证目录" },
+      { name: ".gitattributes", cls: "tag-cfg", descEn: "LF line endings & binary .xlsx", descZh: "统一 LF 行尾并标记 .xlsx 为二进制" }
+    ];
+
+    function renderTree() {
+      const root = document.getElementById("repoTree");
+      root.innerHTML = "";
+      const rootLabel = document.createElement("div");
+      rootLabel.className = "t-out";
+      rootLabel.textContent = "iphone-duo-test/";
+      root.appendChild(rootLabel);
+
+      treeData.forEach((node) => {
+        if (node.type === "folder") {
+          const folder = document.createElement("div");
+          folder.className = "tree-folder";
+          folder.textContent = `${node.open ? "▾" : "▸"} ${node.name}`;
+          const childrenBox = document.createElement("div");
+          childrenBox.className = `tree-children${node.open ? "" : " collapsed"}`;
+          node.children.forEach((child) => {
+            const f = document.createElement("div");
+            f.className = "tree-file";
+            const desc = currentLang === "en" ? child.descEn : child.descZh;
+            f.innerHTML = `<span class="${child.cls}">${child.name}</span> <span style="color:var(--fg-muted)">— ${desc}</span>`;
+            childrenBox.appendChild(f);
+          });
+          folder.addEventListener("click", () => {
+            node.open = !node.open;
+            renderTree();
+          });
+          root.appendChild(folder);
+          root.appendChild(childrenBox);
+        } else {
+          const f = document.createElement("div");
+          f.className = "tree-file";
+          const desc = currentLang === "en" ? node.descEn : node.descZh;
+          f.innerHTML = `<span class="${node.cls}">${node.name}</span> <span style="color:var(--fg-muted)">— ${desc}</span>`;
+          root.appendChild(f);
+        }
+      });
+    }
+
+    function applyLanguage(lang) {
+      currentLang = lang;
+      document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+      document.querySelectorAll("[data-en][data-zh]").forEach((el) => {
+        const val = el.getAttribute(lang === "zh" ? "data-zh" : "data-en");
+        if (el.tagName === "H1") {
+          el.innerHTML = val;
+        } else {
+          el.textContent = val;
+        }
+      });
+      const motionBtn = document.getElementById("motionToggle");
+      motionBtn.textContent = currentLang === "zh"
+        ? (motionEnabled ? "动效：开启" : "动效：关闭")
+        : (motionEnabled ? "Motion: ON" : "Motion: OFF");
+      renderTree();
+      renderTryCmd(activeCmd);
+      playHeroTerminal();
+    }
+
+    // Pipeline cycling
+    let pipeIdx = 0;
+    setInterval(() => {
+      if (!motionEnabled) return;
+      const steps = document.querySelectorAll(".pipe-step");
+      steps.forEach((s) => s.classList.remove("active"));
+      pipeIdx = (pipeIdx + 1) % steps.length;
+      steps[pipeIdx].classList.add("active");
+    }, 2200);
+
+    // Live clock & cadence highlight
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mm = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      document.getElementById("liveClock").textContent = `${hh}:${mm}:${ss}`;
+
+      const day = now.getDay();
+      const mins = now.getHours() * 60 + now.getMinutes();
+      let activeWin = "evening";
+      if (day >= 1 && day <= 5) {
+        if (mins >= 540 && mins < 750) activeWin = "morning";
+        else if (mins >= 810 && mins < 1080) activeWin = "afternoon";
+      }
+      document.querySelectorAll(".cadence-item").forEach((el) => {
+        el.classList.toggle("active", el.dataset.window === activeWin);
+      });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) e.target.classList.add("visible");
+      });
+    }, { threshold: 0.1 });
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+
+    // Events
+    document.getElementById("langToggle").addEventListener("click", () => {
+      applyLanguage(currentLang === "en" ? "zh" : "en");
+    });
+
+    document.querySelectorAll("#cmdChips .chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll("#cmdChips .chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        renderTryCmd(chip.dataset.cmd);
+      });
+    });
+
+    document.getElementById("tweaksToggle").addEventListener("click", () => {
+      document.getElementById("tweaksPanel").classList.toggle("open");
+    });
+
+    document.querySelectorAll("#swatches .swatch").forEach((sw) => {
+      sw.addEventListener("click", () => {
+        document.querySelectorAll("#swatches .swatch").forEach((s) => s.classList.remove("active"));
+        sw.classList.add("active");
+        document.documentElement.style.setProperty("--accent", sw.dataset.color);
+      });
+    });
+
+    document.getElementById("motionToggle").addEventListener("click", () => {
+      motionEnabled = !motionEnabled;
+      document.body.classList.toggle("no-motion", !motionEnabled);
+      applyLanguage(currentLang);
+    });
+
+    if (!motionEnabled) document.body.classList.add("no-motion");
+    applyLanguage("en");
+  </script>
+</body>
+</html>
